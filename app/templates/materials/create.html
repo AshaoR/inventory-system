@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}新建物料{% endblock %}
+{% block page_subtitle %}基础数据 · 新建物料{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><i class="bi bi-plus-circle"></i> 新建物料</h4>
+    <p>创建新的物料档案，编号将自动生成</p>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" class="row g-3">
+            {{ form.hidden_tag() }}
+            <div class="col-md-4">
+                {{ form.name.label(class="form-label") }}{{ form.name(class="form-control") }}
+            </div>
+            <div class="col-md-4">
+                {{ form.spec.label(class="form-label") }}{{ form.spec(class="form-control") }}
+            </div>
+            <div class="col-md-2">
+                {{ form.unit.label(class="form-label") }}{{ form.unit(class="form-select") }}
+            </div>
+            <div class="col-md-3">
+                {{ form.warehouse_type.label(class="form-label") }}{{ form.warehouse_type(class="form-select") }}
+            </div>
+            <div class="col-md-3">
+                {{ form.category.label(class="form-label") }}{{ form.category(class="form-select") }}
+            </div>
+            <div class="col-md-2">
+                {{ form.min_stock.label(class="form-label") }}{{ form.min_stock(class="form-control") }}
+            </div>
+            <div class="col-12 d-flex gap-2">
+                <button class="btn btn-primary" type="submit"><i class="bi bi-check-lg"></i> 保存</button>
+                <a href="{{ url_for('materials.index') }}" class="btn btn-secondary">返回</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

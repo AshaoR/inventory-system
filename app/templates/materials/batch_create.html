@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}批量新建物料{% endblock %}
+{% block page_subtitle %}基础数据 · 批量新建物料{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4><i class="bi bi-plus-square"></i> 批量新建物料</h4>
+        <p>一次性创建多个物料，编号将自动生成</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" id="batchForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="table-wrap" style="max-height:600px;overflow-y:auto;">
+                <table class="kingdee-table" id="batchTable">
+                    <thead>
+                        <tr>
+                            <th style="width:30px;">#</th>
+                            <th style="min-width:140px;">名称 <span style="color:var(--danger)">*</span></th>
+                            <th style="min-width:120px;">规格</th>
+                            <th style="width:90px;">单位</th>
+                            <th style="width:120px;">所属仓库</th>
+                            <th style="width:110px;">分类</th>
+                            <th style="width:90px;">最低库存</th>
+                            <th style="width:50px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="batchBody">
+                        {% for i in range(5) %}
+                        <tr class="batch-row">
+                            <td class="text-center row-num">{{ i + 1 }}</td>
+                            <td><input type="text" name="name" class="form-control form-control-sm" placeholder="物料名称"></td>
+                            <td><input type="text" name="spec" class="form-control form-control-sm" placeholder="规格"></td>
+                            <td>
+                                <select name="unit" class="form-select form-select-sm">
+                                    {% for u in unit_choices %}
+                                    <option value="{{ u }}" {% if u == '个' %}selected{% endif %}>{{ u }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <select name="warehouse_type" class="form-select form-select-sm">
+                                    {% for val, label in wt_choices %}
+                                    <option value="{{ val }}" {% if val == warehouse_type %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <select name="category" class="form-select form-select-sm">
+                                    <option value="">--</option>
+                                    {% for c in cat_choices %}
+                                    <option value="{{ c }}">{{ c }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td><input type="number" name="min_stock" class="form-control form-control-sm" value="0" min="0" step="1"></td>
+                            <td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger remove-row" style="padding:0 6px;">&times;</button></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-flex gap-2 mt-3">
+                <button type="button" class="btn btn-outline-primary" id="addRow"><i class="bi bi-plus-lg"></i> 添加行</button>
+                <button class="btn btn-primary" type="submit"><i class="bi bi-check-lg"></i> 批量创建</button>
+                <a href="{{ url_for('materials.index') }}" class="btn btn-secondary">返回</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    var tbody = document.getElementById('batchBody');
+    var addBtn = document.getElementById('addRow');
+    var rowIndex = {{ 5 if wt_choices else 0 }};
+
+    function updateNumbers() {
+        var rows = tbody.querySelectorAll('.batch-row');
+        rows.forEach(function(r, i) {
+            r.querySelector('.row-num').textContent = i + 1;
+        });
+    }
+
+    addBtn.addEventListener('click', function() {
+        var template = tbody.querySelector('.batch-row');
+        if (!template) return;
+        var clone = template.cloneNode(true);
+        clone.querySelectorAll('input').forEach(function(inp) { inp.value = ''; });
+        clone.querySelectorAll('select').forEach(function(sel) { sel.selectedIndex = 0; });
+        clone.querySelector('select[name="unit"]').value = '个';
+        clone.querySelector('select[name="warehouse_type"]').value = '{{ warehouse_type }}';
+        clone.querySelector('input[name="min_stock"]').value = '0';
+        tbody.appendChild(clone);
+        rowIndex++;
+        updateNumbers();
+    });
+
+    tbody.addEventListener('click', function(e) {
+        var btn = e.target.closest('.remove-row');
+        if (!btn) return;
+        var rows = tbody.querySelectorAll('.batch-row');
+        if (rows.length <= 1) return;
+        btn.closest('.batch-row').remove();
+        updateNumbers();
+    });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}映射管理{% endblock %}
+{% block page_subtitle %}系统管理 · 映射管理{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><i class="bi bi-link-45deg"></i> 外部产品映射管理</h4>
+    <p>管理外部产品名称与系统物料的对应关系</p>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" class="row g-2">
+            {{ form.hidden_tag() }}
+            <div class="col-md-4">
+                <label class="form-label">外部产品名称</label>
+                {{ form.external_name(class="form-control", placeholder="如：70厘米娜纱熊（粉）") }}
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">对应物料</label>
+                {{ form.material_id(class="form-select") }}
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button class="btn btn-primary" type="submit"><i class="bi bi-save"></i> 保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-wrap">
+            <table class="kingdee-table">
+                <thead><tr><th>外部产品名称</th><th>对应物料</th><th>创建时间</th><th>操作</th></tr></thead>
+                <tbody>
+                    {% for m in pagination.items %}
+                    <tr>
+                        <td>{{ m.external_name }}</td>
+                        <td><code>{{ m.material.code }}</code> {{ m.material.name }}</td>
+                        <td>{{ m.created_at | local }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('sales_import.delete_mapping', id=m.id) }}" class="d-inline" onsubmit="return confirm('确认删除？')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button class="btn btn-sm btn-outline-danger">删除</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" class="text-center text-muted">暂无映射</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if pagination.pages > 1 %}
+        <div class="pages" style="padding:12px 16px;">{% for p in pagination.iter_pages() %}{% if p %}<a href="{{ url_for('sales_import.mappings', page=p) }}" class="{% if p == pagination.page %}active{% endif %}">{{ p }}</a>{% endif %}{% endfor %}</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

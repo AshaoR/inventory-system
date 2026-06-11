@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}批量出库{% endblock %}
+{% block page_subtitle %}业务管理 · 出库{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4><i class="bi bi-box-arrow-up"></i> 批量出库</h4>
+        <p>在对应物料行填写数量和类型，提交后自动扣减库存</p>
+    </div>
+</div>
+
+<div class="tabs">
+    {% for wt, wname in [('raw','原材料仓'),('semi','半成品仓'),('finished','成品仓')] %}
+    <a class="tab {% if warehouse_type == wt %}active{% endif %}" href="{{ url_for('outbounds.create', warehouse_type=wt) }}">{{ wname }}</a>
+    {% endfor %}
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" id="entryForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3 d-flex justify-content-between align-items-center">
+                <input type="text" id="filterInput" class="form-control form-control-sm" placeholder="搜索编号 / 名称 / 规格..." style="width:280px;">
+                <div class="form-check mb-0">
+                    <input type="checkbox" name="is_forced" id="is_forced" value="y" class="form-check-input">
+                    <label class="form-check-label fw-bold" for="is_forced">库存不足时强制出库</label>
+                </div>
+            </div>
+            <div class="table-wrap" style="max-height:600px;overflow-y:auto;">
+                <table class="kingdee-table">
+                    <thead>
+                        <tr>
+                            <th>编号</th>
+                            <th>名称</th>
+                            <th>规格</th>
+                            <th>单位</th>
+                            <th style="width:90px;">当前库存</th>
+                            <th style="width:110px;">数量 <span style="color:var(--danger)">*</span></th>
+                            <th style="width:130px;">出库类型</th>
+                            <th style="min-width:120px;">备注</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in materials_data %}
+                        <tr class="mat-row">
+                            <td><code>{{ item.material.code }}</code></td>
+                            <td class="fw-bold">{{ item.material.name }}</td>
+                            <td>{{ item.material.spec or '-' }}</td>
+                            <td>{{ item.material.unit }}</td>
+                            <td>
+                                <span class="fw-bold {% if item.quantity <= 0 %}text-danger{% endif %}">{{ item.quantity | qty }}</span>
+                            </td>
+                            <td>
+                                <input type="hidden" name="material_id" value="{{ item.material.id }}">
+                                <input type="number" name="quantity" class="form-control form-control-sm" value="" min="0" step="any" placeholder="数量">
+                            </td>
+                            <td>
+                                <select name="transaction_type" class="form-select form-select-sm">
+                                    <option value="生产领用">生产领用</option>
+                                    <option value="销售出库">销售出库</option>
+                                    <option value="盘亏出库">盘亏出库</option>
+                                </select>
+                            </td>
+                            <td><input type="text" name="remark" class="form-control form-control-sm" placeholder="备注"></td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted">该仓库暂无物料，请先创建物料</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-flex gap-2 mt-3">
+                <button class="btn btn-danger" type="submit"><i class="bi bi-check-lg"></i> 提交出库</button>
+                <a href="{{ url_for('outbounds.index') }}" class="btn btn-secondary">返回</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var el = document.getElementById('filterInput');
+if (el) {
+    el.addEventListener('input', function() {
+        var q = this.value.trim().toLowerCase();
+        document.querySelectorAll('#entryForm .mat-row').forEach(function(row) {
+            var text = row.textContent.toLowerCase();
+            row.style.display = !q || text.indexOf(q) > -1 ? '' : 'none';
+        });
+    });
+}
+</script>
+{% endblock %}

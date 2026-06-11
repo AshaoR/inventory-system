@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}首页 - 库存管理系统{% endblock %}
+{% block page_subtitle %}首页看板{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><i class="bi bi-grid-1x2"></i> 首页看板</h4>
+    <p>库存数据概览</p>
+</div>
+
+<!-- Stat Cards -->
+<div class="stat-row">
+    <div class="stat-item">
+        <div class="stat-icon-wrapper blue"><i class="bi bi-box"></i></div>
+        <div class="stat-info">
+            <div class="stat-label">物料总数</div>
+            <div class="stat-value">{{ total_materials }}</div>
+            <div class="stat-desc">当前活跃物料</div>
+        </div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-icon-wrapper green"><i class="bi bi-check-circle"></i></div>
+        <div class="stat-info">
+            <div class="stat-label">有库存物料</div>
+            <div class="stat-value">{{ total_inventory_items }}</div>
+            <div class="stat-desc">库存大于零</div>
+        </div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-icon-wrapper yellow"><i class="bi bi-exclamation-triangle"></i></div>
+        <div class="stat-info">
+            <div class="stat-label">预警数量</div>
+            <div class="stat-value">{{ low_stock_count }}</div>
+            <div class="stat-desc">低于最低库存</div>
+        </div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-icon-wrapper red"><i class="bi bi-dash-circle"></i></div>
+        <div class="stat-info">
+            <div class="stat-label">负库存</div>
+            <div class="stat-value">{{ negative_count }}</div>
+            <div class="stat-desc">库存为负数</div>
+        </div>
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;" class="dashboard-grid">
+    <div class="card">
+        <div class="card-header"><i class="bi bi-warehouse"></i> 仓库概况</div>
+        <div class="card-body p-0">
+            <div class="table-wrap">
+                <table class="kingdee-table">
+                    <thead>
+                        <tr><th>仓库</th><th>物料种类</th><th>库存总数</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for ws in warehouse_stats %}
+                        <tr>
+                            <td><i class="bi bi-building" style="margin-right:6px;color:var(--primary);"></i> {{ warehouses.get(ws.warehouse_id, '未知') }}</td>
+                            <td><span class="tag tag-blue">{{ ws.item_count }}</span></td>
+                            <td class="fw-bold">{{ ws.total_qty|float|round(2) }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="3" class="text-center text-muted">暂无数据</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><i class="bi bi-exclamation-triangle" style="color:var(--warning);"></i> 低库存预警</div>
+        <div class="card-body p-0">
+            {% if low_stock_items %}
+            <div class="table-wrap">
+                <table class="kingdee-table">
+                    <thead>
+                        <tr><th>编号</th><th>名称</th><th>当前库存</th><th>预警值</th><th>状态</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for item in low_stock_items %}
+                        <tr>
+                            <td><code>{{ item.code }}</code></td>
+                            <td>{{ item.name }}</td>
+                            <td class="fw-bold" style="color:var(--warning);">{{ item.quantity | qty }}</td>
+                            <td>{{ item.min_stock }}</td>
+                            <td><span class="tag tag-orange">低于预警</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty"><i class="bi bi-check-circle"></i><p>暂无低库存物料</p></div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if active_stocktakes %}
+<div class="card" style="border-color:#ffd591;">
+    <div class="card-header" style="color:#d46b08;"><i class="bi bi-clipboard-data"></i> 进行中的盘点</div>
+    <div class="card-body p-0">
+        <div class="table-wrap">
+            <table class="kingdee-table">
+                <thead>
+                    <tr><th>盘点单号</th><th>仓库</th><th>开始时间</th><th>操作</th></tr>
+                </thead>
+                <tbody>
+                    {% for st in active_stocktakes %}
+                    <tr>
+                        <td>#{{ st.id }}</td>
+                        <td><span class="tag tag-cyan">{{ st.warehouse.name }}</span></td>
+                        <td>{{ st.created_at | local }}</td>
+                        <td><a href="{{ url_for('stocktakes.edit', id=st.id) }}" class="btn btn-sm btn-warning">继续盘点</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-header"><i class="bi bi-clock-history"></i> 最近流水</div>
+    <div class="card-body p-0">
+        <div class="table-wrap">
+            <table class="kingdee-table">
+                <thead>
+                    <tr><th>时间</th><th>类型</th><th>物料</th><th>方向</th><th>数量</th><th>操作人</th></tr>
+                </thead>
+                <tbody>
+                    {% for t in recent_transactions %}
+                    <tr>
+                        <td style="white-space:nowrap;">{{ t.created_at | local }}</td>
+                        <td><span class="tag tag-cyan">{{ t.transaction_type }}</span></td>
+                        <td>{{ t.material.name if t.material else 'N/A' }}</td>
+                        <td>
+                            {% if t.direction == 'in' %}
+                            <span class="tag tag-green">入库</span>
+                            {% else %}
+                            <span class="tag tag-red">出库</span>
+                            {% endif %}
+                        </td>
+                        <td class="fw-bold">{{ t.quantity | qty }}{{ t.material.unit if t.material else '' }}</td>
+                        <td>{{ t.operator.display_name if t.operator else 'N/A' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-center text-muted">暂无流水</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

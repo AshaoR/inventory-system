@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}待处理记录{% endblock %}
+{% block page_subtitle %}系统管理 · 待处理记录{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><i class="bi bi-clock"></i> 待处理记录</h4>
+    <p>以下记录来自外部导入时未能自动匹配的产品，请选择物料后批量处理</p>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('sales_import.bulk_resolve') }}" id="resolveForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="row g-2 mb-3">
+                <div class="col-auto">
+                    <select name="material_id" class="form-control form-control-sm" required>
+                        <option value="">-- 选择物料 --</option>
+                        {% for m in materials %}
+                        <option value="{{ m.id }}">[{{ m.code }}] {{ m.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-success btn-sm" type="submit" onclick="return confirm('确认批量处理所选记录？')">
+                        <i class="bi bi-check-lg"></i> 批量处理
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table class="kingdee-table">
+                    <thead>
+                        <tr><th style="width:40px;"><input type="checkbox" id="selectAll"></th><th>外部名称</th><th>数量</th><th>单号</th><th>导入时间</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for item in pagination.items %}
+                        <tr>
+                            <td><input type="checkbox" name="pending_ids" value="{{ item.id }}" class="cb"></td>
+                            <td>{{ item.external_name }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>{{ item.order_no or '-' }}</td>
+                            <td>{{ item.created_at | local }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="text-center text-muted">无待处理记录</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </form>
+        {% if pagination.pages > 1 %}
+        <div class="pages" style="padding:12px 16px;">{% for p in pagination.iter_pages() %}{% if p %}<a href="{{ url_for('sales_import.pending_items', page=p) }}" class="{% if p == pagination.page %}active{% endif %}">{{ p }}</a>{% endif %}{% endfor %}</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>document.getElementById('selectAll').addEventListener('change',function(){var checked=this.checked;document.querySelectorAll('.cb').forEach(function(cb){cb.checked=checked});});</script>
+{% endblock %}

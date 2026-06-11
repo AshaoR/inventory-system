@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}导入记录{% endblock %}
+{% block page_subtitle %}系统管理 · 导入记录{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4><i class="bi bi-history"></i> 导入记录</h4>
+    </div>
+    <a href="{{ url_for('sales_import.upload') }}" class="btn btn-primary btn-sm"><i class="bi bi-upload"></i> 上传导入</a>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-wrap">
+            <table class="kingdee-table">
+                <thead><tr><th>批次号</th><th>文件名</th><th>记录数</th><th>操作人</th><th>导入时间</th></tr></thead>
+                <tbody>
+                    {% for log in pagination.items %}
+                    <tr>
+                        <td><code>{{ log.batch_no or '-' }}</code></td>
+                        <td>{{ log.file_name }}</td>
+                        <td><span class="tag tag-blue">{{ log.row_count }}</span></td>
+                        <td>{{ log.operator.display_name }}</td>
+                        <td>{{ log.created_at | local }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center text-muted">暂无记录</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if pagination.pages > 1 %}
+        <div class="pages" style="padding:12px 16px;">{% for p in pagination.iter_pages() %}{% if p %}<a href="{{ url_for('sales_import.import_history', page=p) }}" class="{% if p == pagination.page %}active{% endif %}">{{ p }}</a>{% endif %}{% endfor %}</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

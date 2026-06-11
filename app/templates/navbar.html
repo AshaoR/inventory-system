@@ -1,0 +1,94 @@
+<nav class="sidebar">
+    <div class="sidebar-logo">
+        <div class="logo-icon"><i class="bi bi-box-seam"></i></div>
+        <span class="logo-text">库存管理</span>
+    </div>
+
+    <div class="sidebar-menu">
+        <div class="sidebar-item">
+            <a class="sidebar-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}" href="{{ url_for('dashboard.index') }}">
+                <i class="bi bi-grid-1x2"></i> 首页看板
+            </a>
+        </div>
+
+        <div class="sidebar-group">基础数据</div>
+
+        {% if current_user.is_admin %}
+        <div class="sidebar-item has-sub">
+            <a class="sidebar-link" href="#">
+                <i class="bi bi-database"></i> 物料管理 <span class="arrow"><i class="bi bi-chevron-right"></i></span>
+            </a>
+            <ul class="sidebar-sub">
+                <li><a class="sidebar-link" href="{{ url_for('materials.index') }}"><i class="bi bi-list"></i> 物料档案</a></li>
+                <li><a class="sidebar-link" href="{{ url_for('initial_stock.index') }}"><i class="bi bi-inbox"></i> 期初库存</a></li>
+            </ul>
+        </div>
+        {% endif %}
+
+        <div class="sidebar-group">业务处理</div>
+
+        {% if current_user.is_admin %}
+        <div class="sidebar-item has-sub">
+            <a class="sidebar-link" href="#">
+                <i class="bi bi-box-arrow-in-down"></i> 入库管理 <span class="arrow"><i class="bi bi-chevron-right"></i></span>
+            </a>
+            <ul class="sidebar-sub">
+                <li><a class="sidebar-link" href="{{ url_for('inbounds.index') }}"><i class="bi bi-list"></i> 入库列表</a></li>
+                <li><a class="sidebar-link" href="{{ url_for('inbounds.create', warehouse_type='raw') }}"><i class="bi bi-plus"></i> 原材料入库</a></li>
+                <li><a class="sidebar-link" href="{{ url_for('inbounds.create', warehouse_type='semi') }}"><i class="bi bi-plus"></i> 半成品入库</a></li>
+                <li><a class="sidebar-link" href="{{ url_for('inbounds.create', warehouse_type='finished') }}"><i class="bi bi-plus"></i> 成品入库</a></li>
+            </ul>
+        </div>
+        {% endif %}
+
+        <div class="sidebar-item has-sub">
+            <a class="sidebar-link" href="#">
+                <i class="bi bi-box-arrow-up"></i> 出库管理 <span class="arrow"><i class="bi bi-chevron-right"></i></span>
+            </a>
+            <ul class="sidebar-sub">
+                <li><a class="sidebar-link" href="{{ url_for('outbounds.index') }}"><i class="bi bi-list"></i> 出库列表</a></li>
+                <li><a class="sidebar-link" href="{{ url_for('outbounds.create', warehouse_type='raw') }}"><i class="bi bi-dash"></i> 原材料出库</a></li>
+                <li><a class="sidebar-link" href="{{ url_for('outbounds.create', warehouse_type='semi') }}"><i class="bi bi-dash"></i> 半成品出库</a></li>
+                <li><a class="sidebar-link" href="{{ url_for('outbounds.create', warehouse_type='finished') }}"><i class="bi bi-dash"></i> 成品出库</a></li>
+            </ul>
+        </div>
+
+        <div class="sidebar-group">信息查询</div>
+
+        <div class="sidebar-item">
+            <a class="sidebar-link {% if request.endpoint and request.endpoint.startswith('inventory.') %}active{% endif %}" href="{{ url_for('inventory.index') }}">
+                <i class="bi bi-search"></i> 库存查询
+            </a>
+        </div>
+
+        {% if current_user.is_admin %}
+        <div class="sidebar-group">系统管理</div>
+
+        <div class="sidebar-item">
+            <a class="sidebar-link" href="{{ url_for('stocktakes.index') }}">
+                <i class="bi bi-clipboard-check"></i> 库存盘点
+            </a>
+        </div>
+
+        <div class="sidebar-item has-sub">
+            <a class="sidebar-link" href="#">
+                <i class="bi bi-upload"></i> 销售导入 <span class="arrow"><i class="bi bi-chevron-right"></i></span>
+            </a>
+            <ul class="sidebar-sub">
+                <li><a class="sidebar-link" href="{{ url_for('sales_import.upload') }}"><i class="bi bi-file-excel"></i> 上传导入</a></li>
+                <li><a class="sidebar-link" href="{{ url_for('sales_import.mappings') }}"><i class="bi bi-link-45deg"></i> 映射管理</a></li>
+                <li><a class="sidebar-link" href="{{ url_for('sales_import.pending_items') }}"><i class="bi bi-clock"></i> 待处理</a></li>
+                <li><a class="sidebar-link" href="{{ url_for('sales_import.import_history') }}"><i class="bi bi-history"></i> 导入记录</a></li>
+            </ul>
+        </div>
+        {% endif %}
+
+        <div class="sidebar-group" style="margin-top:8px;"></div>
+
+        <div class="sidebar-item">
+            <a class="sidebar-link" href="{{ url_for('auth.logout') }}">
+                <i class="bi bi-box-arrow-left"></i> 退出登录
+            </a>
+        </div>
+    </div>
+</nav>

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}盘点详情{% endblock %}
+{% block page_subtitle %}管理工具 · 盘点详情{% endblock %}
+{% block content %}
+{% set total = stocktake.items|length %}
+{% set profit_count = stocktake.items|selectattr('difference', 'gt', 0)|list|length %}
+{% set loss_count = stocktake.items|selectattr('difference', 'lt', 0)|list|length %}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4><i class="bi bi-clipboard-data"></i> 盘点详情 - {{ stocktake.warehouse.name }}</h4>
+        <p>盘点单 #{{ stocktake.id }} | {{ stocktake.started_at | local }}</p>
+    </div>
+    {% if stocktake.status == 'in_progress' %}
+    <span class="badge bg-warning fs-6" style="padding:6px 16px;">进行中</span>
+    {% else %}
+    <span class="badge bg-success fs-6" style="padding:6px 16px;">已完成</span>
+    {% endif %}
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-3"><strong>操作人：</strong>{{ stocktake.operator.display_name }}</div>
+            <div class="col-md-3"><strong>仓库：</strong>{{ stocktake.warehouse.name }}</div>
+            <div class="col-md-3"><strong>状态：</strong>{{ '进行中' if stocktake.status == 'in_progress' else '已完成' }}</div>
+            <div class="col-md-3"><strong>备注：</strong>{{ stocktake.remark or '-' }}</div>
+        </div>
+        <div class="stat-row" style="margin-bottom:0;">
+            <div class="stat-item">
+                <div class="stat-icon-wrapper blue"><i class="bi bi-box"></i></div>
+                <div class="stat-info">
+                    <div class="stat-label">物料总数</div>
+                    <div class="stat-value">{{ total }}</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon-wrapper green"><i class="bi bi-arrow-up-circle"></i></div>
+                <div class="stat-info">
+                    <div class="stat-label">盘盈</div>
+                    <div class="stat-value" style="color:var(--success);">{{ profit_count }}<span style="font-size:14px;font-weight:400;color:var(--text-secondary);"> 项</span></div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon-wrapper red"><i class="bi bi-arrow-down-circle"></i></div>
+                <div class="stat-info">
+                    <div class="stat-label">盘亏</div>
+                    <div class="stat-value" style="color:var(--danger);">{{ loss_count }}<span style="font-size:14px;font-weight:400;color:var(--text-secondary);"> 项</span></div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon-wrapper yellow"><i class="bi bi-check-circle"></i></div>
+                <div class="stat-info">
+                    <div class="stat-label">无差异</div>
+                    <div class="stat-value" style="color:var(--warning);">{{ total - profit_count - loss_count }}<span style="font-size:14px;font-weight:400;color:var(--text-secondary);"> 项</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><i class="bi bi-list-check"></i> 盘点明细</div>
+    <div class="card-body p-0">
+        <div class="table-wrap">
+            <table class="kingdee-table">
+                <thead>
+                    <tr><th>编号</th><th>名称</th><th>规格</th><th>账面数</th><th>实盘数</th><th>差异</th><th>备注</th></tr>
+                </thead>
+                <tbody>
+                    {% for item in stocktake.items %}
+                    <tr>
+                        <td><code>{{ item.material.code }}</code></td>
+                        <td class="fw-bold">{{ item.material.name }}</td>
+                        <td>{{ item.material.spec or '-' }}</td>
+                        <td class="fw-bold">{{ item.book_quantity | qty }}</td>
+                        <td>{{ item.actual_quantity | qty if item.actual_quantity is not none else '-' }}</td>
+                        <td>
+                            {% if item.difference > 0 %}
+                            <span class="tag tag-green">+{{ item.difference }} 盘盈</span>
+                            {% elif item.difference < 0 %}
+                            <span class="tag tag-red">{{ item.difference }} 盘亏</span>
+                            {% else %}
+                            <span style="color:var(--text-secondary);">0</span>
+                            {% endif %}
+                        </td>
+                        <td style="color:var(--text-secondary);">{{ item.remark or '-' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" class="text-center text-muted">暂无明细</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<a href="{{ url_for('stocktakes.index') }}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> 返回</a>
+{% endblock %}

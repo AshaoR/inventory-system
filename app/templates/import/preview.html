@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}预览匹配结果{% endblock %}
+{% block page_subtitle %}系统管理 · 导入预览{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><i class="bi bi-eye"></i> 预览匹配结果</h4>
+    <p>文件名：{{ file_name }} | 已匹配 <span style="color:var(--success);font-weight:600;">{{ mapped_count }}</span> 行，未匹配 <span style="color:var(--danger);font-weight:600;">{{ unmapped_count }}</span> 行</p>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+    <div class="card">
+        <div class="card-header" style="color:var(--success);"><i class="bi bi-check-circle"></i> 已匹配（将导入）</div>
+        <div class="card-body p-0">
+            <div class="table-wrap">
+                <table class="kingdee-table">
+                    <thead><tr><th>产品名称</th><th>数量</th><th>对应物料</th></tr></thead>
+                    <tbody>
+                        {% for r in mapped %}
+                        <tr><td>{{ r.product_name }}</td><td>{{ r.quantity }}</td><td><code>{{ r.material.code }}</code> {{ r.material.name }}</td></tr>
+                        {% else %}
+                        <tr><td colspan="3" class="text-center text-muted">无</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header" style="color:var(--danger);"><i class="bi bi-x-circle"></i> 未匹配（将暂存）</div>
+        <div class="card-body p-0">
+            <div class="table-wrap">
+                <table class="kingdee-table">
+                    <thead><tr><th>产品名称</th><th>数量</th></tr></thead>
+                    <tbody>
+                        {% for r in unmapped %}
+                        <tr><td>{{ r.product_name }}</td><td>{{ r.quantity }}</td></tr>
+                        {% else %}
+                        <tr><td colspan="2" class="text-center text-muted">全部匹配成功</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form method="POST" action="{{ url_for('sales_import.confirm') }}" onsubmit="return confirm('确认导入 ' + {{ mapped_count }} + ' 条记录？');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="d-flex gap-2">
+        <button class="btn btn-success" type="submit"><i class="bi bi-check-lg"></i> 确认导入</button>
+        <a href="{{ url_for('sales_import.upload') }}" class="btn btn-secondary">重新上传</a>
+    </div>
+</form>
+{% endblock %}

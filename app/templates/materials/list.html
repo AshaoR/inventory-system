@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}物料档案{% endblock %}
+{% block page_subtitle %}基础数据 · 物料档案{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4><i class="bi bi-database"></i> 物料档案</h4>
+        <p>管理所有物料信息</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('materials.create', warehouse_type=warehouse_type) }}" class="btn btn-primary"><i class="bi bi-plus"></i> 新建物料</a>
+        <a href="{{ url_for('materials.batch_create', warehouse_type=warehouse_type) }}" class="btn btn-outline-primary"><i class="bi bi-plus-square"></i> 批量新建</a>
+    </div>
+</div>
+
+<div class="tabs">
+    {% for wt, wname in [('raw','原材料仓'),('semi','半成品仓'),('finished','成品仓')] %}
+    <a class="tab {% if warehouse_type == wt and not show_inactive %}active{% endif %}" href="{{ url_for('materials.index', warehouse_type=wt) }}">{{ wname }}</a>
+    {% endfor %}
+    <a class="tab {% if show_inactive %}active{% endif %}" href="{{ url_for('materials.index', show_inactive=1) }}" style="color:var(--danger);">已停用</a>
+</div>
+
+<div class="card">
+    <div class="card-body" style="padding:12px 16px;">
+        <form class="row g-2" method="GET">
+            <input type="hidden" name="warehouse_type" value="{{ warehouse_type }}">
+            <input type="hidden" name="show_inactive" value="{{ '1' if show_inactive else '0' }}">
+            <div class="col-auto">
+                <input type="text" name="search" class="form-control form-control-sm" placeholder="搜索编号/名称/规格" value="{{ search }}" style="width:240px;">
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-primary btn-sm" type="submit"><i class="bi bi-search"></i> 搜索</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-wrap">
+            <table class="kingdee-table">
+                <thead>
+                    <tr><th>编号</th><th>名称</th><th>规格</th><th>分类</th><th>单位</th><th>库存</th><th>预警</th><th>操作</th></tr>
+                </thead>
+                <tbody>
+                    {% for m in materials %}
+                    <tr>
+                        <td><code>{{ m.code }}</code></td>
+                        <td class="fw-bold">{{ m.name }}</td>
+                        <td>{{ m.spec or '-' }}</td>
+                        <td>{{ m.category or '-' }}</td>
+                        <td>{{ m.unit }}</td>
+                        <td>
+                            {% if m.quantity < 0 %}
+                            <span class="tag tag-red">{{ m.quantity | qty }}</span>
+                            {% elif m.min_stock > 0 and 0 < m.quantity < m.min_stock %}
+                            <span class="tag tag-orange">{{ m.quantity | qty }}</span>
+                            {% else %}
+                            <span class="tag tag-green">{{ m.quantity | qty }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ m.min_stock }}</td>
+                        <td>
+                            <a href="{{ url_for('materials.edit', id=m.id) }}" class="btn btn-sm btn-outline-primary">编辑</a>
+                            {% if show_inactive %}
+                            <form method="POST" action="{{ url_for('materials.reactivate', id=m.id) }}" class="d-inline" style="display:inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button class="btn btn-sm btn-outline-success" onclick="return confirm('确认恢复此物料？')">恢复</button>
+                            </form>
+                            {% else %}
+                            <button class="btn btn-sm btn-outline-danger" onclick="deactivateMaterial({{ m.id }}, '{{ m.name }}', {{ m.quantity }}, '{{ url_for("materials.deactivate", id=m.id) }}')">停用</button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="8" class="text-center text-muted">暂无物料</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if pagination.pages > 1 %}
+        <div class="pages" style="padding:12px 16px;">{% for p in pagination.iter_pages() %}{% if p %}<a href="{{ url_for('materials.index', page=p, warehouse_type=warehouse_type, search=search, show_inactive=('1' if show_inactive else '0')) }}" class="{% if p == pagination.page %}active{% endif %}">{{ p }}</a>{% endif %}{% endfor %}</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function deactivateMaterial(id, name, quantity, url) {
+    let msg = '确认停用物料 "' + name + '"?';
+    if (quantity > 0) msg = '该物料尚有 ' + quantity + ' 件库存，确定要停用吗？';
+    if (confirm(msg)) {
+        var f=document.createElement('form');f.method='POST';f.action=url;
+        var csrf=document.createElement('input');csrf.type='hidden';csrf.name='csrf_token';csrf.value='{{ csrf_token() }}';
+        f.appendChild(csrf);document.body.appendChild(f);f.submit();
+    }
+}
+</script>
+{% endblock %}

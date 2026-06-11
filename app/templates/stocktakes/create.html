@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}新建盘点{% endblock %}
+{% block page_subtitle %}管理工具 · 新建盘点{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><i class="bi bi-plus-circle"></i> 新建盘点单</h4>
+    <p>开始盘点后系统将冻结当前库存快照，可逐项录入实盘数量</p>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" class="row g-3">
+            {{ form.hidden_tag() }}
+            <div class="col-md-6">
+                {{ form.warehouse_id.label(class="form-label") }}{{ form.warehouse_id(class="form-select") }}
+            </div>
+            <div class="col-12">
+                {{ form.remark.label(class="form-label") }}{{ form.remark(class="form-control", rows=2) }}
+            </div>
+            <div class="col-12 d-flex gap-2">
+                <button class="btn btn-primary" type="submit"><i class="bi bi-play-fill"></i> 开始盘点</button>
+                <a href="{{ url_for('stocktakes.index') }}" class="btn btn-secondary">返回</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

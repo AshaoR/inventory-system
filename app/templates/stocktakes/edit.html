@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}录入盘点数据{% endblock %}
+{% block page_subtitle %}管理工具 · {{ stocktake.warehouse.name }}盘点{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4><i class="bi bi-pencil-square"></i> 录入实盘数据 - {{ stocktake.warehouse.name }}</h4>
+        <p>开始时间：{{ stocktake.started_at | local }} | 盘点单 #{{ stocktake.id }}</p>
+    </div>
+    <span class="badge bg-warning fs-6" style="padding:6px 16px;">进行中</span>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="table-wrap">
+                <table class="kingdee-table">
+                    <thead>
+                        <tr><th>编号</th><th>名称</th><th>规格</th><th>账面数</th><th>实盘数</th><th>差异</th><th>备注</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for item in stocktake.items %}
+                        <tr>
+                            <td><code>{{ item.material.code }}</code></td>
+                            <td>{{ item.material.name }}</td>
+                            <td>{{ item.material.spec or '-' }}</td>
+                            <td class="book-qty fw-bold">{{ item.book_quantity | qty }}</td>
+                            <td>
+                                <input type="number" step="any" class="form-control form-control-sm actual-input"
+                                       style="width:120px;" name="actual_{{ item.id }}"
+                                       value="{{ item.actual_quantity if item.actual_quantity is not none else '' }}">
+                            </td>
+                            <td class="diff-cell fw-bold">0</td>
+                            <td><input type="text" class="form-control form-control-sm" style="width:150px;"
+                                       name="remark_{{ item.id }}" value="{{ item.remark or '' }}"></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-3 d-flex gap-2">
+                <button class="btn btn-success" type="submit" onclick="return confirm('提交后将自动调整库存差异，确认提交？')">
+                    <i class="bi bi-check-lg"></i> 提交盘点结果
+                </button>
+                <a href="{{ url_for('stocktakes.index') }}" class="btn btn-secondary">返回</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.actual-input').forEach(function(input) {
+    input.addEventListener('input', function() {
+        var row = this.closest('tr');
+        var bookQty = parseFloat(row.querySelector('.book-qty').textContent) || 0;
+        var actualQty = parseFloat(this.value) || 0;
+        var diffCell = row.querySelector('.diff-cell');
+        var diff = actualQty - bookQty;
+        diffCell.textContent = diff;
+        diffCell.style.color = diff > 0 ? '#52c41a' : diff < 0 ? '#ff4d4f' : 'inherit';
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ material.name }} - 流水明细{% endblock %}
+{% block page_subtitle %}库存查询 · 流水明细{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><i class="bi bi-clock-history"></i> <code>{{ material.code }}</code> {{ material.name }} 出入库流水</h4>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr><th>时间</th><th>方向</th><th>类型</th><th>数量</th><th>仓库</th><th>批次号</th><th>强制出库</th><th>操作人</th><th>备注</th></tr>
+                </thead>
+                <tbody>
+                    {% for t in pagination.items %}
+                    <tr>
+                        <td style="white-space:nowrap;">{{ t.created_at | local }}</td>
+                        <td>{% if t.direction == 'in' %}<span class="badge bg-success">入库</span>{% else %}<span class="badge bg-danger">出库</span>{% endif %}</td>
+                        <td><span class="badge bg-info">{{ t.transaction_type }}</span></td>
+                        <td class="fw-bold">{{ t.quantity | qty }}</td>
+                        <td>{{ t.warehouse.name }}</td>
+                        <td><code>{{ t.batch_no or '-' }}</code></td>
+                        <td>{% if t.is_forced %}<span class="badge bg-danger">强制出库</span>{% else %}-{% endif %}</td>
+                        <td>{{ t.operator.display_name }}</td>
+                        <td>{{ t.remark or '-' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="9" class="text-center text-muted">暂无流水</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if pagination.pages > 1 %}
+        <div class="pages" style="padding:12px 16px;">{% for p in pagination.iter_pages() %}{% if p %}<a href="{{ url_for('inventory.material_transactions', material_id=material.id, page=p) }}" class="{% if p == pagination.page %}active{% endif %}">{{ p }}</a>{% endif %}{% endfor %}</div>
+        {% endif %}
+    </div>
+</div>
+<a href="{{ url_for('inventory.index') }}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> 返回库存查询</a>
+{% endblock %}

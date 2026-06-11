@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}服务器错误{% endblock %}
+{% block page_subtitle %}500{% endblock %}
+{% block content %}
+<div style="text-align:center;padding:80px 20px;">
+    <h1 style="font-size:72px;color:var(--danger);margin-bottom:8px;">500</h1>
+    <p style="font-size:18px;color:var(--text-secondary);margin-bottom:32px;">服务器出了点问题，请稍后重试</p>
+    <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary">返回首页</a>
+</div>
+{% endblock %}
