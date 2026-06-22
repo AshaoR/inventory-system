@@ -57,7 +57,7 @@
                         </td>
                         <td>{{ m.min_stock }}</td>
                         <td>
-                            <a href="{{ url_for('materials.edit', id=m.id) }}" class="btn btn-sm btn-outline-primary">编辑</a>
+                            <button class="btn btn-sm btn-outline-primary" onclick="openEditModal({{ m.id }})">编辑</button>
                             {% if show_inactive %}
                             <form method="POST" action="{{ url_for('materials.reactivate', id=m.id) }}" class="d-inline" style="display:inline;">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -79,12 +79,122 @@
         {% endif %}
     </div>
 </div>
+
+<!-- 编辑弹框 -->
+<div class="modal fade" id="editModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">编辑物料 - <span id="editCode"></span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editId">
+        <div class="mb-3">
+          <label class="form-label">名称</label>
+          <input type="text" id="editName" class="form-control">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">规格</label>
+          <input type="text" id="editSpec" class="form-control">
+        </div>
+        <div class="row mb-3">
+          <div class="col-6">
+            <label class="form-label">单位</label>
+            <select id="editUnit" class="form-select">
+              <option value="个">个</option>
+              <option value="只">只</option>
+              <option value="米">米</option>
+              <option value="千克">千克</option>
+              <option value="包">包</option>
+              <option value="箱">箱</option>
+              <option value="套">套</option>
+              <option value="张">张</option>
+              <option value="卷">卷</option>
+              <option value="条">条</option>
+            </select>
+          </div>
+          <div class="col-6">
+            <label class="form-label">仓库类别</label>
+            <select id="editWarehouseType" class="form-select">
+              <option value="raw">原材料仓</option>
+              <option value="semi">半成品仓</option>
+              <option value="finished">成品仓</option>
+            </select>
+          </div>
+        </div>
+        <div class="row mb-3">
+          <div class="col-6">
+            <label class="form-label">分类</label>
+            <select id="editCategory" class="form-select">
+              <option value="">无分类</option>
+              <option value="面料">面料</option>
+              <option value="填充棉">填充棉</option>
+              <option value="配件">配件</option>
+              <option value="包装">包装</option>
+              <option value="衣服">衣服</option>
+              <option value="其他">其他</option>
+            </select>
+          </div>
+          <div class="col-6">
+            <label class="form-label">最低预警</label>
+            <input type="number" id="editMinStock" class="form-control" min="0" step="any">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+        <button class="btn btn-primary" onclick="saveEdit()"><i class="bi bi-check-lg"></i> 保存</button>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+var materialsData = {{ materials | tojson }};
+
+function openEditModal(id) {
+    var m = materialsData.find(function(x) { return x.id == id; });
+    if (!m) return;
+    document.getElementById('editId').value = m.id;
+    document.getElementById('editCode').textContent = m.code;
+    document.getElementById('editName').value = m.name;
+    document.getElementById('editSpec').value = m.spec || '';
+    document.getElementById('editUnit').value = m.unit;
+    document.getElementById('editWarehouseType').value = m.warehouse_type;
+    document.getElementById('editCategory').value = m.category || '';
+    document.getElementById('editMinStock').value = m.min_stock;
+    var modal = new bootstrap.Modal(document.getElementById('editModal'));
+    modal.show();
+}
+
+function saveEdit() {
+    var id = document.getElementById('editId').value;
+    var data = {
+        name: document.getElementById('editName').value.trim(),
+        spec: document.getElementById('editSpec').value.trim(),
+        unit: document.getElementById('editUnit').value,
+        warehouse_type: document.getElementById('editWarehouseType').value,
+        category: document.getElementById('editCategory').value,
+        min_stock: parseFloat(document.getElementById('editMinStock').value) || 0,
+    };
+    if (!data.name) { alert('物料名称不能为空'); return; }
+    fetch('/api/materials/' + id, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data),
+    }).then(function(r) { return r.json().then(function(j) { return {ok: r.ok, data: j}; }); })
+    .then(function(res) {
+        if (!res.ok) { alert(res.data.error); return; }
+        bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+        location.reload();
+    }).catch(function(e) { alert('保存失败：' + e.message); });
+}
+
 function deactivateMaterial(id, name, quantity, url) {
-    let msg = '确认停用物料 "' + name + '"?';
+    var msg = '确认停用物料 "' + name + '"?';
     if (quantity > 0) msg = '该物料尚有 ' + quantity + ' 件库存，确定要停用吗？';
     if (confirm(msg)) {
         var f=document.createElement('form');f.method='POST';f.action=url;
