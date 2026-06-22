@@ -85,7 +85,7 @@ def create():
         except Exception as e:
             db.session.rollback()
             flash(f"入库失败：{str(e)}", "danger")
-        return redirect(url_for("inbounds.index"))
+        return redirect(url_for("inbounds.create", warehouse_type=warehouse_type))
 
     return render_template("inbounds/create.html", materials=materials, warehouse_type=warehouse_type, warehouse_name=wh.name if wh else "")
 

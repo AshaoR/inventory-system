@@ -88,7 +88,7 @@ def create():
         except Exception as e:
             db.session.rollback()
             flash(f"出库失败：{str(e)}", "danger")
-        return redirect(url_for("outbounds.index"))
+        return redirect(url_for("outbounds.create", warehouse_type=warehouse_type))
 
     from app.services import InventoryService
     materials_data = []
