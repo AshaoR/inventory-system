@@ -17,8 +17,9 @@
     <div class="card-body">
         <form method="POST" id="entryForm">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="mb-3">
+            <div class="d-flex align-items-center gap-2 mb-3">
                 <input type="text" id="filterInput" class="form-control form-control-sm" placeholder="搜索编号 / 名称 / 规格..." style="width:280px;">
+                <button class="btn btn-outline-primary btn-sm" type="button" onclick="document.getElementById('filterInput').focus()"><i class="bi bi-search"></i></button>
             </div>
             <div class="table-wrap" style="max-height:600px;overflow-y:auto;">
                 <table class="kingdee-table">
