@@ -3,7 +3,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import current_user
 from app.decorators import admin_required
 from app import db
-from app.models import Material, Warehouse, Transaction
+from app.models import Material, Warehouse, Transaction, Inventory
 from app.services import OutboundService
 import openpyxl
 
@@ -91,9 +91,15 @@ def create():
         return redirect(url_for("outbounds.create", warehouse_type=warehouse_type))
 
     from app.services import InventoryService
+    material_ids = [m.id for m in materials]
+    invs = Inventory.query.filter(
+        Inventory.material_id.in_(material_ids),
+        Inventory.warehouse_id == wh.id,
+    ).all() if wh else []
+    inv_map = {inv.material_id: inv.quantity for inv in invs}
     materials_data = []
     for m in materials:
-        qty = InventoryService.get_quantity(m.id, wh.id) if wh else 0
+        qty = inv_map.get(m.id, 0)
         materials_data.append({"material": m, "quantity": qty})
     return render_template("outbounds/create.html",
                            materials_data=materials_data,

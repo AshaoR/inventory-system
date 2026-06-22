@@ -4,27 +4,9 @@ from app.decorators import admin_required
 from app import db
 from app.models import Material, Warehouse, Inventory
 from app.forms import MaterialForm
+from app.services import generate_code
 
 materials_bp = Blueprint("materials", __name__, url_prefix="/materials")
-
-
-def generate_code(warehouse_type):
-    prefix_map = {"raw": "R", "semi": "S", "finished": "F"}
-    prefix = prefix_map.get(warehouse_type, "X")
-    last = (
-        Material.query
-        .filter(Material.code.like(f"{prefix}-%"))
-        .order_by(Material.code.desc())
-        .first()
-    )
-    if last and "-" in last.code:
-        try:
-            seq = int(last.code.split("-")[1]) + 1
-        except (ValueError, IndexError):
-            seq = 1
-    else:
-        seq = 1
-    return f"{prefix}-{seq:04d}"
 
 
 @materials_bp.route("/")
@@ -43,13 +25,14 @@ def index():
         query = query.filter(db.or_(Material.name.contains(search), Material.code.contains(search), Material.spec.contains(search)))
 
     pagination = query.order_by(Material.code).paginate(page=page, per_page=50, error_out=False)
+    material_ids = [m.id for m in pagination.items]
+    invs = Inventory.query.filter(Inventory.material_id.in_(material_ids)).all()
+    inv_map = {inv.material_id: inv.quantity for inv in invs}
+    warehouses = {w.code: w.id for w in Warehouse.query.all()}
     material_list = []
     for m in pagination.items:
-        wh = Warehouse.query.filter_by(code=m.warehouse_type).first()
-        qty = 0
-        if wh:
-            inv = Inventory.query.filter_by(material_id=m.id, warehouse_id=wh.id).first()
-            qty = inv.quantity if inv else 0
+        wh_id = warehouses.get(m.warehouse_type)
+        qty = inv_map.get(m.id, 0) if wh_id else 0
         material_list.append({**m.to_dict(), "quantity": qty})
 
     return render_template("materials/list.html", materials=material_list, pagination=pagination, warehouse_type=warehouse_type, show_inactive=show_inactive, search=search)

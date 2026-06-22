@@ -11,6 +11,26 @@ from app.models import (
 from app.models import BJ
 
 
+def generate_code(warehouse_type):
+    """根据仓库类型生成物料编号 (R-0001 / S-0001 / F-0001)"""
+    prefix_map = {"raw": "R", "semi": "S", "finished": "F"}
+    prefix = prefix_map.get(warehouse_type, "X")
+    last = (
+        Material.query
+        .filter(Material.code.like(f"{prefix}-%"))
+        .order_by(Material.code.desc())
+        .first()
+    )
+    if last and "-" in last.code:
+        try:
+            seq = int(last.code.split("-")[1]) + 1
+        except (ValueError, IndexError):
+            seq = 1
+    else:
+        seq = 1
+    return f"{prefix}-{seq:04d}"
+
+
 class InventoryService:
 
     @staticmethod
@@ -146,13 +166,12 @@ class StocktakeService:
         db.session.add(st)
         db.session.flush()
 
+        invs = Inventory.query.filter_by(warehouse_id=warehouse_id).all()
+        inv_map = {inv.material_id: inv.quantity for inv in invs}
         for m in materials:
-            inv = Inventory.query.filter_by(
-                material_id=m.id, warehouse_id=warehouse_id
-            ).first()
             item = StocktakeItem(
                 stocktake_id=st.id, material_id=m.id,
-                book_quantity=inv.quantity if inv else 0,
+                book_quantity=inv_map.get(m.id, 0),
             )
             db.session.add(item)
 
@@ -289,8 +308,6 @@ class ImportService:
 
     @staticmethod
     def auto_match(product_name):
-        from sqlalchemy import or_
-
         name = product_name.strip()
         if not name:
             return None

@@ -18,20 +18,23 @@ def list_inventory():
     if not wh:
         return jsonify({"data": [], "warehouse_name": ""})
 
-    query = Inventory.query.filter_by(warehouse_id=wh.id)
+    query = Inventory.query.filter_by(warehouse_id=wh.id).join(Material).filter(Material.is_active == True)
     if search:
-        query = query.join(Material).filter(
+        query = query.filter(
             db.or_(
                 Material.name.contains(search),
                 Material.code.contains(search),
                 Material.spec.contains(search),
             )
         )
+    if alert_only:
+        query = query.filter(db.or_(
+            db.and_(Inventory.quantity > 0, Inventory.quantity < Material.min_stock),
+            Inventory.quantity < 0,
+        ))
 
     result = []
     for item in query.order_by(Inventory.updated_at.desc()).all():
-        if not item.material or not item.material.is_active:
-            continue
         entry = {
             "material_id": item.material.id,
             "code": item.material.code,
@@ -45,9 +48,6 @@ def list_inventory():
             "is_negative": (item.quantity or 0) < 0,
         }
         result.append(entry)
-
-    if alert_only:
-        result = [r for r in result if r["is_low"] or r["is_negative"]]
 
     return jsonify({"data": result, "warehouse_name": wh.name})
 

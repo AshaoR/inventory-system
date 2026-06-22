@@ -3,27 +3,9 @@ from flask_login import login_required
 from app.decorators import admin_required
 from app import db
 from app.models import Material, Warehouse, Inventory
+from app.services import generate_code
 
 api_materials_bp = Blueprint("api_materials", __name__)
-
-
-def generate_code(warehouse_type):
-    prefix_map = {"raw": "R", "semi": "S", "finished": "F"}
-    prefix = prefix_map.get(warehouse_type, "X")
-    last = (
-        Material.query
-        .filter(Material.code.like(f"{prefix}-%"))
-        .order_by(Material.code.desc())
-        .first()
-    )
-    if last and "-" in last.code:
-        try:
-            seq = int(last.code.split("-")[1]) + 1
-        except (ValueError, IndexError):
-            seq = 1
-    else:
-        seq = 1
-    return f"{prefix}-{seq:04d}"
 
 
 @api_materials_bp.route("/materials", methods=["GET"])
@@ -47,13 +29,14 @@ def list_materials():
         ))
 
     pagination = query.order_by(Material.code).paginate(page=page, per_page=per_page, error_out=False)
+    material_ids = [m.id for m in pagination.items]
+    invs = Inventory.query.filter(Inventory.material_id.in_(material_ids)).all()
+    inv_map = {inv.material_id: inv.quantity for inv in invs}
+    warehouses = {w.code: w.id for w in Warehouse.query.all()}
     items = []
     for m in pagination.items:
-        wh = Warehouse.query.filter_by(code=m.warehouse_type).first()
-        qty = 0
-        if wh:
-            inv = Inventory.query.filter_by(material_id=m.id, warehouse_id=wh.id).first()
-            qty = inv.quantity if inv else 0
+        wh_id = warehouses.get(m.warehouse_type)
+        qty = inv_map.get(m.id, 0) if wh_id else 0
         d = m.to_dict()
         d["quantity"] = qty
         items.append(d)

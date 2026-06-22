@@ -44,6 +44,7 @@
         </div>
         {% endif %}
 
+        {% if current_user.is_admin %}
         <div class="sidebar-item has-sub">
             <a class="sidebar-link" href="#">
                 <i class="bi bi-box-arrow-up"></i> 出库管理 <span class="arrow"><i class="bi bi-chevron-right"></i></span>
@@ -55,6 +56,7 @@
                 <li><a class="sidebar-link" href="{{ url_for('outbounds.create', warehouse_type='finished') }}"><i class="bi bi-dash"></i> 成品出库</a></li>
             </ul>
         </div>
+        {% endif %}
 
         <div class="sidebar-group">信息查询</div>
 

@@ -20,9 +20,11 @@ def index():
 
     low_stock_count = 0
     low_stock_items = []
-    for m in Material.query.filter_by(is_active=True).all():
-        inv = Inventory.query.filter_by(material_id=m.id).first()
-        qty = inv.quantity if inv else 0
+    rows = db.session.query(Material, Inventory.quantity).outerjoin(
+        Inventory, Inventory.material_id == Material.id
+    ).filter(Material.is_active == True).all()
+    for m, qty in rows:
+        qty = qty or 0
         if 0 < qty < (m.min_stock or 0):
             low_stock_count += 1
             if len(low_stock_items) < 10:
@@ -33,20 +35,9 @@ def index():
 
     negative_count = Inventory.query.filter(Inventory.quantity < 0).count()
 
-    recent_transactions = []
-    for t in Transaction.query.order_by(Transaction.created_at.desc()).limit(20).all():
-        recent_transactions.append({
-            "id": t.id,
-            "direction": t.direction,
-            "type": t.transaction_type,
-            "material_name": t.material.name if t.material else "",
-            "material_code": t.material.code if t.material else "",
-            "warehouse_name": t.warehouse.name if t.warehouse else "",
-            "quantity": t.quantity,
-            "operator": t.operator.display_name if t.operator else "",
-            "created_at": t.created_at.strftime("%Y-%m-%d %H:%M") if t.created_at else "",
-            "is_forced": t.is_forced,
-        })
+    recent_transactions = [t.to_dict() for t in
+        Transaction.query.order_by(Transaction.created_at.desc()).limit(20).all()
+    ]
 
     active_stocktakes = []
     for st in Stocktake.query.filter_by(status="in_progress").order_by(Stocktake.created_at.desc()).all():

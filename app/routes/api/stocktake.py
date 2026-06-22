@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from flask_login import current_user
+from sqlalchemy.orm import selectinload
 from app.decorators import admin_required
 from app import db
 from app.models import Warehouse, Stocktake
@@ -17,7 +18,7 @@ def list_stocktakes():
     query = Stocktake.query
     if status_filter in ("in_progress", "completed"):
         query = query.filter_by(status=status_filter)
-    pagination = query.order_by(Stocktake.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    pagination = query.options(selectinload(Stocktake.items)).order_by(Stocktake.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
     items = []
     for st in pagination.items:
         items.append({

@@ -20,9 +20,11 @@ def index():
 
     low_stock_count = 0
     low_stock_items = []
-    for m in Material.query.filter_by(is_active=True).all():
-        inv = Inventory.query.filter_by(material_id=m.id).first()
-        qty = inv.quantity if inv else 0
+    rows = db.session.query(Material, Inventory.quantity).outerjoin(
+        Inventory, Inventory.material_id == Material.id
+    ).filter(Material.is_active == True).all()
+    for m, qty in rows:
+        qty = qty or 0
         if 0 < qty < (m.min_stock or 0):
             low_stock_count += 1
             if len(low_stock_items) < 10:

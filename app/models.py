@@ -63,6 +63,10 @@ class Material(db.Model):
             "is_active": self.is_active,
         }
 
+    __table_args__ = (
+        db.Index("ix_material_warehouse_type_active", "warehouse_type", "is_active"),
+    )
+
 
 class Inventory(db.Model):
     __tablename__ = "inventory"
@@ -80,6 +84,7 @@ class Inventory(db.Model):
     __table_args__ = (
         db.UniqueConstraint("material_id", "warehouse_id"),
         db.Index("ix_inventory_warehouse_id", "warehouse_id"),
+        db.Index("ix_inventory_material_id", "material_id"),
     )
 
     material = db.relationship("Material", lazy="joined")
@@ -106,6 +111,30 @@ class Transaction(db.Model):
     material = db.relationship("Material", lazy="joined")
     warehouse = db.relationship("Warehouse", lazy="joined")
     operator = db.relationship("User", lazy="joined")
+
+    def to_dict(self, include_relations=True):
+        d = {
+            "id": self.id,
+            "direction": self.direction,
+            "type": self.transaction_type,
+            "quantity": self.quantity,
+            "unit_price": float(self.unit_price) if self.unit_price else None,
+            "batch_no": self.batch_no or "",
+            "is_forced": self.is_forced,
+            "remark": self.remark or "",
+            "created_at": self.created_at.strftime("%Y-%m-%d %H:%M") if self.created_at else "",
+        }
+        if include_relations:
+            d.update({
+                "material_id": self.material_id,
+                "material_code": self.material.code if self.material else "",
+                "material_name": self.material.name if self.material else "",
+                "material_spec": self.material.spec if self.material else "",
+                "warehouse_id": self.warehouse_id,
+                "warehouse_name": self.warehouse.name if self.warehouse else "",
+                "operator": self.operator.display_name if self.operator else "",
+            })
+        return d
 
     __table_args__ = (
         db.Index("ix_transaction_material_id", "material_id"),
