@@ -1,6 +1,11 @@
 import os
+import sys
 
-basedir = os.path.abspath(os.path.dirname(__file__))
+# PyInstaller 打包后 __file__ 在 _internal 里，数据库应放 exe 同级
+if getattr(sys, "frozen", False):
+    basedir = os.path.dirname(sys.executable)
+else:
+    basedir = os.path.abspath(os.path.dirname(__file__))
 
 
 class Config:

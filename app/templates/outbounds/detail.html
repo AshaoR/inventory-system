@@ -9,16 +9,16 @@
     <div class="card-body">
         <div class="row">
             <div class="col-md-6">
-                <table style="border:none;">
-                    <tr><td style="color:var(--secondary);width:100px;border:none;">时间</td><td style="border:none;">{{ t.created_at | local }}</td></tr>
-                    <tr><td style="color:var(--secondary);border:none;">类型</td><td style="border:none;"><span class="badge bg-info">{{ t.transaction_type }}</span></td></tr>
-                    <tr><td style="color:var(--secondary);border:none;">物料</td><td style="border:none;"><code>{{ t.material.code }}</code> {{ t.material.name }}</td></tr>
-                    <tr><td style="color:var(--secondary);border:none;">仓库</td><td style="border:none;">{{ t.warehouse.name }}</td></tr>
-                    <tr><td style="color:var(--secondary);border:none;">数量</td><td style="border:none;" class="fw-bold text-danger">{{ t.quantity | qty }} {{ t.material.unit }}</td></tr>
-                    <tr><td style="color:var(--secondary);border:none;">批次号</td><td style="border:none;"><code>{{ t.batch_no or '-' }}</code></td></tr>
-                    <tr><td style="color:var(--secondary);border:none;">强制出库</td><td style="border:none;">{% if t.is_forced %}<span class="badge bg-danger">是</span>{% else %}否{% endif %}</td></tr>
-                    <tr><td style="color:var(--secondary);border:none;">操作人</td><td style="border:none;">{{ t.operator.display_name }}</td></tr>
-                    <tr><td style="color:var(--secondary);border:none;">备注</td><td style="border:none;">{{ t.remark or '-' }}</td></tr>
+                <table class="info-table">
+                    <tr><td>时间</td><td>{{ t.created_at | local }}</td></tr>
+                    <tr><td>类型</td><td><span class="badge bg-info">{{ t.transaction_type }}</span></td></tr>
+                    <tr><td>物料</td><td><code>{{ t.material.code }}</code> {{ t.material.name }}</td></tr>
+                    <tr><td>仓库</td><td>{{ t.warehouse.name }}</td></tr>
+                    <tr><td>数量</td><td class="fw-bold text-danger">{{ t.quantity | qty }} {{ t.material.unit }}</td></tr>
+                    <tr><td>批次号</td><td><code>{{ t.batch_no or '-' }}</code></td></tr>
+                    <tr><td>强制出库</td><td>{% if t.is_forced %}<span class="badge bg-danger">是</span>{% else %}否{% endif %}</td></tr>
+                    <tr><td>操作人</td><td>{{ t.operator.display_name }}</td></tr>
+                    <tr><td>备注</td><td>{{ t.remark or '-' }}</td></tr>
                 </table>
             </div>
         </div>

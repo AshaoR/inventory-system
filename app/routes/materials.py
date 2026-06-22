@@ -63,10 +63,10 @@ def create():
     if warehouse_type in ("raw", "semi", "finished"):
         form.warehouse_type.data = warehouse_type
     if form.validate_on_submit():
-        # 检查同名
-        existing = Material.query.filter_by(name=form.name.data, warehouse_type=form.warehouse_type.data, is_active=True).first()
+        # 检查同名同规格
+        existing = Material.query.filter_by(name=form.name.data, spec=form.spec.data or None, warehouse_type=form.warehouse_type.data, is_active=True).first()
         if existing:
-            flash(f"该仓库已存在同名物料：{existing.code} {existing.name}", "danger")
+            flash(f"该仓库已存在同名同规格物料：{existing.code} {existing.name}" + (f" ({existing.spec})" if existing.spec else ""), "danger")
             return render_template("materials/create.html", form=form)
         code = generate_code(form.warehouse_type.data)
         m = Material(code=code, name=form.name.data, spec=form.spec.data or None, unit=form.unit.data, warehouse_type=form.warehouse_type.data, category=form.category.data or None, min_stock=form.min_stock.data or 0)
@@ -86,49 +86,53 @@ def batch_create():
     warehouse_type = request.args.get("warehouse_type", "raw")
 
     if request.method == "POST":
-        names = request.form.getlist("name")
-        specs = request.form.getlist("spec")
-        units = request.form.getlist("unit")
-        warehouse_types = request.form.getlist("warehouse_type")
-        categories = request.form.getlist("category")
-        min_stocks = request.form.getlist("min_stock")
+        try:
+            names = request.form.getlist("name")
+            specs = request.form.getlist("spec")
+            units = request.form.getlist("unit")
+            warehouse_types = request.form.getlist("warehouse_type")
+            categories = request.form.getlist("category")
+            min_stocks = request.form.getlist("min_stock")
 
-        created, skipped = 0, 0
-        for i in range(len(names)):
-            name = names[i].strip()
-            if not name:
-                skipped += 1
-                continue
-            # 检查同名
-            existing = Material.query.filter_by(name=name, warehouse_type=wt, is_active=True).first()
-            if existing:
-                skipped += 1
-                continue
-            spec = specs[i].strip() if i < len(specs) else ""
-            unit = units[i].strip() if i < len(units) else "个"
-            wt = warehouse_types[i].strip() if i < len(warehouse_types) else "raw"
-            cat = categories[i].strip() if i < len(categories) else ""
-            try:
-                ms = float(min_stocks[i]) if i < len(min_stocks) and min_stocks[i].strip() else 0
-            except ValueError:
-                ms = 0
+            created, skipped = 0, 0
+            for i in range(len(names)):
+                name = names[i].strip()
+                if not name:
+                    skipped += 1
+                    continue
+                spec = specs[i].strip() if i < len(specs) else ""
+                unit = units[i].strip() if i < len(units) else "个"
+                wt = warehouse_types[i].strip() if i < len(warehouse_types) else "raw"
+                cat = categories[i].strip() if i < len(categories) else ""
+                # 检查同名同规格
+                existing = Material.query.filter_by(name=name, spec=spec or None, warehouse_type=wt, is_active=True).first()
+                if existing:
+                    skipped += 1
+                    continue
+                try:
+                    ms = float(min_stocks[i]) if i < len(min_stocks) and min_stocks[i].strip() else 0
+                except ValueError:
+                    ms = 0
 
-            code = generate_code(wt)
-            m = Material(
-                code=code, name=name, spec=spec or None,
-                unit=unit, warehouse_type=wt,
-                category=cat or None, min_stock=ms,
-            )
-            db.session.add(m)
-            created += 1
+                code = generate_code(wt)
+                m = Material(
+                    code=code, name=name, spec=spec or None,
+                    unit=unit, warehouse_type=wt,
+                    category=cat or None, min_stock=ms,
+                )
+                db.session.add(m)
+                created += 1
 
-        db.session.commit()
-        parts = []
-        if created:
-            parts.append(f"成功创建 {created} 条物料")
-        if skipped:
-            parts.append(f"{skipped} 条已跳过（名称为空或重复）")
-        flash("，".join(parts), "success" if created else "warning")
+            db.session.commit()
+            parts = []
+            if created:
+                parts.append(f"成功创建 {created} 条物料")
+            if skipped:
+                parts.append(f"{skipped} 条已跳过（名称为空或重复）")
+            flash("，".join(parts), "success" if created else "warning")
+        except Exception as e:
+            db.session.rollback()
+            flash(f"批量创建失败：{str(e)}", "danger")
         return redirect(url_for("materials.index"))
 
     return render_template("materials/batch_create.html",

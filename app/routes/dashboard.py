@@ -12,11 +12,11 @@ dashboard_bp = Blueprint("dashboard", __name__)
 def index():
     total_materials = Material.query.filter_by(is_active=True).count()
     total_inventory_items = (
-        Inventory.query
+        db.session.query(func.count(func.distinct(Inventory.material_id)))
         .join(Material)
         .filter(Material.is_active == True, Inventory.quantity > 0)
-        .count()
-    )
+        .scalar()
+    ) or 0
 
     low_stock_count = 0
     low_stock_items = []

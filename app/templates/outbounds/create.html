@@ -19,12 +19,12 @@
     <div class="card-body">
         <form method="POST" id="entryForm">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="mb-3 d-flex justify-content-between align-items-center">
+            <div class="d-flex justify-content-between align-items-center mb-3">
                 <input type="text" id="filterInput" class="form-control form-control-sm" placeholder="搜索编号 / 名称 / 规格..." style="width:280px;">
-                <div class="form-check mb-0">
-                    <input type="checkbox" name="is_forced" id="is_forced" value="y" class="form-check-input">
-                    <label class="form-check-label fw-bold" for="is_forced">库存不足时强制出库</label>
-                </div>
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;font-weight:600;">
+                    <input type="checkbox" name="is_forced" id="is_forced" value="y" style="width:16px;height:16px;">
+                    库存不足时强制出库
+                </label>
             </div>
             <div class="table-wrap" style="max-height:600px;overflow-y:auto;">
                 <table class="kingdee-table">

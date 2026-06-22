@@ -2,6 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_wtf import CSRFProtect
+from flask_cors import CORS
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -11,6 +12,9 @@ csrf = CSRFProtect()
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object("config.Config")
+
+    # CORS — allow Vite dev server
+    CORS(app, supports_credentials=True, resources={r"/api/*": {"origins": "*"}})
 
     import os
     os.makedirs(app.instance_path, exist_ok=True)
@@ -31,7 +35,16 @@ def create_app():
     csrf.init_app(app)
 
     login_manager.login_view = "auth.login"
-    login_manager.login_message = "请先登录系统"
+    login_manager.login_message = None
+
+    from flask import request, jsonify
+
+    @login_manager.unauthorized_handler
+    def unauthorized():
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "未登录"}), 401
+        from flask import redirect
+        return redirect("/auth/login")
 
     from app.models import User
 
@@ -58,6 +71,10 @@ def create_app():
     app.register_blueprint(stocktake_bp)
     app.register_blueprint(initial_stock_bp)
     app.register_blueprint(sales_import_bp)
+
+    # 注册 API 蓝图（JSON API，免除 CSRF）
+    from app.routes.api import register_api_blueprints
+    register_api_blueprints(app)
 
     @app.context_processor
     def inject_user():

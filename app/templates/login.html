@@ -3,31 +3,32 @@
 {% block login_content %}
 <div class="login-page">
     <div class="login-box">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-            <div style="width:36px;height:36px;border-radius:6px;background:linear-gradient(135deg,#1890ff,#096dd9);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;">
-                <i class="bi bi-box-seam"></i>
+        <div class="login-header">
+            <div class="login-icon"><i class="bi bi-box-seam"></i></div>
+            <div>
+                <h3>库存管理系统</h3>
+                <div style="font-size:12px;color:var(--text-secondary);">紫洋玩具 · 毛绒玩具生产管理</div>
             </div>
-            <h3 style="margin:0;">库存管理系统</h3>
         </div>
         <p class="sub">请输入您的账号和密码登录</p>
 
         <form method="POST">
             {{ form.hidden_tag() }}
-            <div style="margin-bottom:16px;">
+            <div style="margin-bottom:18px;">
                 <label class="form-label">用户名</label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-person"></i></span>
                     {{ form.username(class="form-control", placeholder="请输入用户名") }}
                 </div>
             </div>
-            <div style="margin-bottom:24px;">
+            <div style="margin-bottom:28px;">
                 <label class="form-label">密码</label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-lock"></i></span>
                     {{ form.password(class="form-control", placeholder="请输入密码") }}
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary"><i class="bi bi-box-arrow-in-right"></i> 登录</button>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-box-arrow-in-right"></i> 登 录</button>
         </form>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -37,6 +38,8 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
+
+        <div class="login-footer">库存管理系统 v2.0</div>
     </div>
 </div>
 {% endblock %}

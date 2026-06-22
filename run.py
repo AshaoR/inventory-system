@@ -6,6 +6,14 @@ app = create_app()
 
 
 def init_db():
+    # 确保数据库目录存在（PyInstaller 打包后 __file__ 在 _internal 里）
+    import os, sys
+    if getattr(sys, "frozen", False):
+        db_dir = os.path.join(os.path.dirname(sys.executable), "instance")
+    else:
+        db_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "instance")
+    os.makedirs(db_dir, exist_ok=True)
+
     from app.models import User, Warehouse
 
     db.create_all()
@@ -32,6 +40,13 @@ def init_db():
 
 
 if __name__ == "__main__":
+    # 启动前自动备份数据库
+    try:
+        from backup import backup
+        backup()
+    except Exception:
+        pass
+
     with app.app_context():
         init_db()
     debug_mode = os.environ.get("FLASK_DEBUG", "0") == "1"

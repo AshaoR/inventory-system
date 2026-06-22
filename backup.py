@@ -11,8 +11,11 @@ import shutil
 import sys
 from datetime import datetime, timedelta
 
-# 获取脚本所在目录（不论从哪个目录调用都能正确工作）
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+# PyInstaller 打包后 __file__ 在 _internal 里，数据库应放 exe 同级
+if getattr(sys, "frozen", False):
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DB_FILE = os.path.join(BASE_DIR, "instance", "stock.db")
 BACKUP_DIR = os.path.join(BASE_DIR, "backup")
 RETENTION_DAYS = 30
