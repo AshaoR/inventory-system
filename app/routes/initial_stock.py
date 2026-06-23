@@ -112,20 +112,33 @@ def export_excel():
         ws = wb.active
         ws.title = "录入记录"
         ws.append(["时间", "物料编号", "物料名称", "规格", "单位", "仓库", "数量", "单价", "操作人", "备注"])
-        records = InitialStock.query.order_by(InitialStock.created_at.desc()).all()
-        for r in records:
-            ws.append([
-                r.created_at.strftime("%Y-%m-%d %H:%M"),
-                r.material.code if r.material else "",
-                r.material.name if r.material else "",
-                r.material.spec or "",
-                r.material.unit if r.material else "",
-                r.warehouse.name if r.warehouse else "",
-                r.quantity,
-                str(r.unit_price) if r.unit_price else "",
-                r.operator.display_name if r.operator else "",
-                r.remark or "",
-            ])
+        # 左连查询：所有物料 + 初始录入记录（库存为0的也显示）
+        rows = (
+            db.session.query(Material, InitialStock)
+            .outerjoin(InitialStock, InitialStock.material_id == Material.id)
+            .filter(Material.is_active == True)
+            .order_by(InitialStock.created_at.desc().nullslast(), Material.warehouse_type, Material.code)
+            .all()
+        )
+        seen = set()
+        for m, r in rows:
+            if r:
+                ws.append([
+                    r.created_at.strftime("%Y-%m-%d %H:%M"),
+                    r.material.code if r.material else "",
+                    r.material.name if r.material else "",
+                    r.material.spec or "",
+                    r.material.unit if r.material else "",
+                    r.warehouse.name if r.warehouse else "",
+                    r.quantity,
+                    str(r.unit_price) if r.unit_price else "",
+                    r.operator.display_name if r.operator else "",
+                    r.remark or "",
+                ])
+                seen.add(m.id)
+            elif m.id not in seen:
+                ws.append(["", m.code, m.name, m.spec or "", m.unit, wh.name, 0, "", "", ""])
+                seen.add(m.id)
         filename = f"录入记录_{wh.name if wh else ''}.xlsx"
 
     output = io.BytesIO()
